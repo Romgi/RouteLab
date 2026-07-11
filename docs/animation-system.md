@@ -76,9 +76,9 @@ No algorithm is rerun during timeline navigation. A new trace is generated only 
 
 ## Playback controller
 
-Autoplay owns one cancelable browser timer. Each tick advances by one semantic event until the final cursor, then stops. Changing route, scenario, algorithm, cost model, heuristic, closure state, or trace cancels the prior timer. Starting playback at the end restarts from cursor zero only through an explicit replay action.
+Autoplay owns one cancelable animation-frame loop. Elapsed wall-clock time determines the semantic cursor, so faster rates can advance several correctness events in one paint without distorting total playback time. Changing route, scenario, algorithm, cost model, heuristic, closure state, or trace cancels the prior loop. Starting playback at the end restarts from cursor zero only through an explicit replay action.
 
-The speed control maps human-readable rates to timer cadence. It does not batch correctness events together. The browser may throttle timers in a background tab; on return, RouteLab continues from the current cursor rather than racing through wall-clock “missed” ticks.
+The speed control maps human-readable rates from 0.5× through 100× to elapsed playback time. Real-time mode instead maps each lane's event stream across that algorithm's measured computation duration, while retaining the shared normalized progress controller. The browser may throttle animation frames in a background tab; on return, RouteLab derives the cursor from elapsed time and safely catches up to the correct position.
 
 Global keyboard shortcuts are scoped away from editable controls:
 
@@ -92,9 +92,9 @@ Native buttons and the range input remain the authoritative accessible controls 
 
 ## Compare synchronization
 
-Compare Mode runs two to four distinct compatible algorithms independently against the same immutable graph, start, goal, closures, and cost metric. Each pane owns a trace/result; the controller owns playback, speed, and a shared step.
+Compare Mode runs two to four distinct compatible algorithms independently against the same immutable graph, start, goal, closures, and cost metric. Each pane owns a trace/result; the controller owns playback mode and normalized progress. Fixed-speed playback uses one shared semantic step. Real-time playback resolves a lane-specific step from its measured computation duration, so quicker algorithms can visibly finish before slower ones.
 
-At zero-based shared event index `s`, a pane selects `min(s, trace.length - 1)` and replays through that selected event. A shorter trace therefore stays at its completed state while a longer trace continues. Metrics remain the pane's real counters; RouteLab does not stretch or synthesize events to make animations look simultaneous. Reset and scrub apply to every pane atomically.
+In fixed-speed playback, at zero-based shared event index `s`, a pane selects `min(s, trace.length - 1)` and replays through that selected event. A shorter trace therefore stays at its completed state while a longer trace continues. In real-time playback, each pane maps elapsed time across its own trace using that algorithm's measured total computation duration. Metrics remain the pane's real counters; RouteLab does not synthesize correctness events to make animations look simultaneous. Reset and scrub apply to every pane atomically.
 
 For comparisons with substantially different event counts, normalized-progress visualization can be added later, but it must be labeled because equal percentages do not represent equivalent algorithm decisions.
 

@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 
 import { GraphCanvas } from "@/components/GraphCanvas";
 import {
@@ -16,6 +22,15 @@ import {
   type RunOptions,
 } from "@/lib/algorithms";
 import {
+  formatExecutionTime,
+  getPlaybackDurationMs,
+  getRealtimeLaneStep,
+  getTimelineStepAtElapsed,
+  parsePlaybackMode,
+  PLAYBACK_SPEEDS,
+  type PlaybackMode,
+} from "@/lib/compare-playback";
+import {
   BUILT_IN_SCENARIOS,
   SCENARIO_LIMITS,
   type CostMetric,
@@ -25,7 +40,6 @@ import {
 import styles from "./CompareWorkspace.module.css";
 
 const DEFAULT_ALGORITHMS: readonly AlgorithmId[] = ["dijkstra", "astar"];
-const PLAYBACK_SPEEDS = [0.5, 1, 2, 4] as const;
 
 const COST_LABELS: Readonly<Record<CostMetric, string>> = {
   weight: "Edge weight",
@@ -47,6 +61,10 @@ const OPTIMALITY_LABELS: Readonly<Record<CorrectnessStatus, string>> = {
   "undefined-negative-cycle": "Undefined: negative cycle",
   unreachable: "Destination unreachable",
 };
+
+const subscribeToHydration = () => () => undefined;
+const getHydratedSnapshot = () => true;
+const getServerHydratedSnapshot = () => false;
 
 interface ComparisonRun {
   readonly algorithmId: AlgorithmId;
@@ -216,8 +234,18 @@ export function CompareWorkspace({
     resolvedInitialHeuristic,
   );
   const [step, setStep] = useState(0);
+  const stepRef = useRef(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [playbackMode, setPlaybackMode] = useState<PlaybackMode>(1);
+  const [realtimeElapsedMs, setRealtimeElapsedMs] = useState<number | null>(
+    null,
+  );
+  const realtimeElapsedRef = useRef(0);
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getHydratedSnapshot,
+    getServerHydratedSnapshot,
+  );
   const [copyState, setCopyState] = useState<"idle" | "copied" | "address-bar">(
     "idle",
   );
@@ -257,8 +285,20 @@ export function CompareWorkspace({
     (run): run is ComparisonRun & { result: AlgorithmResult } =>
       run.result !== null,
   );
+  const maxExecutionTimeMs = Math.max(
+    0,
+    ...validRuns.map((run) => run.result.metrics.executionTimeMs),
+  );
+  const resolveLaneStep = (result: AlgorithmResult) =>
+    playbackMode === "realtime" && realtimeElapsedMs !== null
+      ? getRealtimeLaneStep({
+          elapsedMs: realtimeElapsedMs,
+          executionTimeMs: result.metrics.executionTimeMs,
+          traceLength: result.trace.length,
+        })
+      : Math.min(step, Math.max(0, result.trace.length - 1));
   const completedRunCount = validRuns.filter(
-    (run) => step >= run.result.trace.length - 1,
+    (run) => resolveLaneStep(run.result) >= run.result.trace.length - 1,
   ).length;
   const sharedComplete = validRuns.length > 0 && step >= maxStep;
   const successfulRuns = validRuns.filter((run) => run.result.found);
@@ -274,28 +314,73 @@ export function CompareWorkspace({
   useEffect(() => {
     if (!isPlaying) return undefined;
 
-    const interval = window.setInterval(
-      () => {
-        setStep((currentStep) => {
-          const nextStep = Math.min(maxStep, currentStep + 1);
-          if (nextStep >= maxStep) {
-            setIsPlaying(false);
-            setAnnouncement(
-              `Comparison finished. ${validRuns.length} traces are complete.`,
-            );
-          }
-          return nextStep;
-        });
-      },
-      Math.max(70, Math.round(680 / playbackSpeed)),
-    );
+    const startStep = Math.min(maxStep, stepRef.current);
+    const realtimeStartElapsedMs =
+      playbackMode === "realtime"
+        ? Math.min(maxExecutionTimeMs, realtimeElapsedRef.current)
+        : 0;
+    const durationMs = getPlaybackDurationMs({
+      startStep,
+      maxStep,
+      mode: playbackMode,
+      realtimeDurationMs: maxExecutionTimeMs,
+      realtimeStartElapsedMs,
+    });
+    let frameId = 0;
+    const startedAt = window.performance.now();
+    let renderedStep = startStep;
 
-    return () => window.clearInterval(interval);
-  }, [isPlaying, maxStep, playbackSpeed, validRuns.length]);
+    const tick = (timestamp: number) => {
+      const elapsedMs = Math.max(0, timestamp - startedAt);
+
+      if (playbackMode === "realtime") {
+        const totalElapsedMs =
+          maxExecutionTimeMs <= 0
+            ? 0
+            : Math.min(maxExecutionTimeMs, realtimeStartElapsedMs + elapsedMs);
+        realtimeElapsedRef.current = totalElapsedMs;
+        setRealtimeElapsedMs(totalElapsedMs);
+      }
+
+      const nextStep = getTimelineStepAtElapsed({
+        startStep,
+        maxStep,
+        elapsedMs,
+        durationMs,
+      });
+      if (nextStep !== renderedStep) {
+        renderedStep = nextStep;
+        stepRef.current = nextStep;
+        setStep(nextStep);
+      }
+
+      if (elapsedMs >= durationMs) {
+        stepRef.current = maxStep;
+        setStep(maxStep);
+        if (playbackMode === "realtime") {
+          realtimeElapsedRef.current = maxExecutionTimeMs;
+          setRealtimeElapsedMs(maxExecutionTimeMs);
+        }
+        setIsPlaying(false);
+        setAnnouncement(
+          `Comparison finished. ${validRuns.length} traces are complete.`,
+        );
+        return;
+      }
+
+      frameId = window.requestAnimationFrame(tick);
+    };
+
+    frameId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [isPlaying, maxExecutionTimeMs, maxStep, playbackMode, validRuns.length]);
 
   function resetTimeline(message: string) {
     setIsPlaying(false);
+    stepRef.current = 0;
     setStep(0);
+    realtimeElapsedRef.current = 0;
+    setRealtimeElapsedMs(null);
     setCopyState("idle");
     setAnnouncement(message);
   }
@@ -361,17 +446,64 @@ export function CompareWorkspace({
       setAnnouncement(`Playback paused at shared step ${step + 1}.`);
       return;
     }
-    if (sharedComplete) setStep(0);
+    const startStep = sharedComplete ? 0 : stepRef.current;
+    if (sharedComplete) {
+      stepRef.current = 0;
+      setStep(0);
+    }
+    if (playbackMode === "realtime") {
+      const elapsedMs = sharedComplete
+        ? 0
+        : (realtimeElapsedMs ??
+          (maxStep > 0 ? (startStep / maxStep) * maxExecutionTimeMs : 0));
+      realtimeElapsedRef.current = elapsedMs;
+      setRealtimeElapsedMs(elapsedMs);
+    }
     setIsPlaying(true);
     setAnnouncement(
-      sharedComplete ? "Comparison replay started." : "Playback started.",
+      playbackMode === "realtime"
+        ? `Real-time playback started. Slowest measured compute time: ${formatExecutionTime(maxExecutionTimeMs)}.`
+        : sharedComplete
+          ? "Comparison replay started."
+          : `Playback started at ${playbackMode} times speed.`,
     );
   }
 
   function moveToStep(nextStep: number, message: string) {
+    const resolvedStep = Math.min(maxStep, Math.max(0, nextStep));
     setIsPlaying(false);
-    setStep(Math.min(maxStep, Math.max(0, nextStep)));
+    stepRef.current = resolvedStep;
+    setStep(resolvedStep);
+    if (playbackMode === "realtime") {
+      const elapsedMs =
+        maxStep > 0 ? (resolvedStep / maxStep) * maxExecutionTimeMs : 0;
+      realtimeElapsedRef.current = elapsedMs;
+      setRealtimeElapsedMs(elapsedMs);
+    } else {
+      realtimeElapsedRef.current = 0;
+      setRealtimeElapsedMs(null);
+    }
     setAnnouncement(message);
+  }
+
+  function handlePlaybackModeChange(value: string) {
+    const nextMode = parsePlaybackMode(value);
+    setPlaybackMode(nextMode);
+    if (nextMode === "realtime") {
+      const elapsedMs =
+        maxStep > 0 ? (stepRef.current / maxStep) * maxExecutionTimeMs : 0;
+      realtimeElapsedRef.current = elapsedMs;
+      setRealtimeElapsedMs(elapsedMs);
+      setAnnouncement(
+        validRuns.length === 0
+          ? "Real-time mode selected, but no compatible runs are available."
+          : `Real-time mode selected. Slowest measured compute time: ${formatExecutionTime(maxExecutionTimeMs)}.`,
+      );
+    } else {
+      realtimeElapsedRef.current = 0;
+      setRealtimeElapsedMs(null);
+      setAnnouncement(`Playback speed changed to ${nextMode} times.`);
+    }
   }
 
   async function copyConfiguration() {
@@ -579,12 +711,10 @@ export function CompareWorkspace({
           {runs.map((run, index) => {
             const info = ALGORITHM_INFO[run.algorithmId];
             const result = run.result;
-            const laneStep = result
-              ? Math.min(step, Math.max(0, result.trace.length - 1))
-              : 0;
+            const laneStep = result ? resolveLaneStep(result) : 0;
             const event = result?.trace[laneStep] ?? null;
             const laneComplete = result
-              ? step >= result.trace.length - 1
+              ? laneStep >= result.trace.length - 1
               : false;
 
             return (
@@ -682,7 +812,10 @@ export function CompareWorkspace({
 
                 {result ? (
                   <>
-                    <div className={styles.graphFrame}>
+                    <div
+                      className={styles.graphFrame}
+                      data-testid="compare-graph-frame"
+                    >
                       <GraphCanvas
                         graph={scenario.graph}
                         startId={scenario.startId}
@@ -731,11 +864,32 @@ export function CompareWorkspace({
                         </dd>
                       </div>
                       <div>
+                        <dt>Max frontier</dt>
+                        <dd>
+                          {result.metrics.maximumFrontierSize.toLocaleString(
+                            "en-US",
+                          )}
+                        </dd>
+                      </div>
+                      <div>
                         <dt>Trace events</dt>
                         <dd>
                           {result.metrics.traceEventCount.toLocaleString(
                             "en-US",
                           )}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Compute</dt>
+                        <dd
+                          data-testid="compare-compute-time"
+                          suppressHydrationWarning
+                        >
+                          {hydrated
+                            ? formatExecutionTime(
+                                result.metrics.executionTimeMs,
+                              )
+                            : "—"}
                         </dd>
                       </div>
                     </dl>
@@ -861,15 +1015,24 @@ export function CompareWorkspace({
           <label className={styles.speedField}>
             <span>Speed</span>
             <select
-              value={playbackSpeed}
-              onChange={(event) => setPlaybackSpeed(Number(event.target.value))}
+              value={String(playbackMode)}
+              onChange={(event) => handlePlaybackModeChange(event.target.value)}
+              aria-label="Playback speed"
             >
               {PLAYBACK_SPEEDS.map((speed) => (
                 <option key={speed} value={speed}>
                   {speed}×
                 </option>
               ))}
+              <option value="realtime">Real time</option>
             </select>
+            <small suppressHydrationWarning>
+              {playbackMode === "realtime"
+                ? validRuns.length === 0
+                  ? "No compatible runs"
+                  : `${hydrated ? formatExecutionTime(maxExecutionTimeMs) : "—"} measured`
+                : `${formatExecutionTime(680 / playbackMode)} / event`}
+            </small>
           </label>
         </div>
       </section>
