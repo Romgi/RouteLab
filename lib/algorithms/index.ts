@@ -1258,6 +1258,10 @@ interface ResultParts {
   readonly allPairs?: AllPairsShortestPaths;
 }
 
+function monotonicNow(): number {
+  return typeof performance === "undefined" ? Date.now() : performance.now();
+}
+
 function makeResult(
   options: ResolvedRunOptions,
   recorder: TraceRecorder,
@@ -1268,7 +1272,7 @@ function makeResult(
 ): AlgorithmResult {
   const resultMetrics: AlgorithmMetrics = {
     ...metrics,
-    executionTimeMs: Math.max(0, Date.now() - startedAt),
+    executionTimeMs: Math.max(0, monotonicNow() - startedAt),
     traceEventCount: recorder.trace.length,
   };
   return {
@@ -1337,7 +1341,7 @@ function executeBreadthFirstSearch(
   options: ResolvedRunOptions,
   warnings: readonly CompatibilityIssue[],
 ): AlgorithmResult {
-  const startedAt = Date.now();
+  const startedAt = monotonicNow();
   const traversal = buildTraversalGraph(graph, options);
   const recorder = new TraceRecorder(
     options.algorithmId,
@@ -1487,7 +1491,7 @@ function executeBestFirst(
   warnings: readonly CompatibilityIssue[],
   mode: BestFirstMode,
 ): AlgorithmResult {
-  const startedAt = Date.now();
+  const startedAt = monotonicNow();
   const traversal = buildTraversalGraph(graph, options);
   const goal = traversal.nodesById.get(options.goalId);
   if (!goal) throw new Error("Validated goal node is missing.");
@@ -1749,7 +1753,7 @@ function executeBidirectionalDijkstra(
   options: ResolvedRunOptions,
   warnings: readonly CompatibilityIssue[],
 ): AlgorithmResult {
-  const startedAt = Date.now();
+  const startedAt = monotonicNow();
   const traversal = buildTraversalGraph(graph, options);
   const recorder = new TraceRecorder(
     options.algorithmId,
@@ -2077,7 +2081,7 @@ function executeBellmanFord(
   options: ResolvedRunOptions,
   warnings: readonly CompatibilityIssue[],
 ): AlgorithmResult {
-  const startedAt = Date.now();
+  const startedAt = monotonicNow();
   const traversal = buildTraversalGraph(graph, options);
   const recorder = new TraceRecorder(
     options.algorithmId,
@@ -2319,7 +2323,7 @@ function executeFloydWarshall(
   options: ResolvedRunOptions,
   warnings: readonly CompatibilityIssue[],
 ): AlgorithmResult {
-  const startedAt = Date.now();
+  const startedAt = monotonicNow();
   const traversal = buildTraversalGraph(graph, options);
   const recorder = new TraceRecorder(
     options.algorithmId,

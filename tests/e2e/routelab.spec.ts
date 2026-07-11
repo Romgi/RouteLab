@@ -131,6 +131,75 @@ test("Compare Mode runs real synchronized traces", async ({ page }) => {
   await expect(page.getByLabel("Algorithm in lane 2")).toHaveValue("astar");
   const sliders = page.getByRole("slider");
   await expect(sliders.first()).toBeEnabled();
+
+  const graphFrames = page.getByTestId("compare-graph-frame");
+  await expect(graphFrames).toHaveCount(2);
+  for (const frame of await graphFrames.all()) {
+    const geometry = await frame.evaluate((element) => {
+      const frameRect = element.getBoundingClientRect();
+      const visualRect = element
+        .querySelector(".graph-visual")!
+        .getBoundingClientRect();
+      const svgRect = element.querySelector("svg")!.getBoundingClientRect();
+      return {
+        visualContained:
+          visualRect.top >= frameRect.top - 1 &&
+          visualRect.bottom <= frameRect.bottom + 1,
+        svgContained:
+          svgRect.top >= frameRect.top - 1 &&
+          svgRect.bottom <= frameRect.bottom + 1,
+      };
+    });
+    expect(geometry.visualContained).toBe(true);
+    expect(geometry.svgContained).toBe(true);
+  }
+});
+
+test("Compare Mode supports 100x and measured real-time playback", async ({
+  page,
+}) => {
+  await page.goto("/compare");
+  const timeline = page
+    .getByRole("region", { name: "Synchronized playback controls" })
+    .getByRole("slider");
+  const speed = page.getByRole("combobox", { name: "Playback speed" });
+  const computeTimes = page.getByTestId("compare-compute-time");
+
+  await expect(computeTimes.first()).not.toHaveText("—");
+  await expect(speed.locator("option")).toHaveText([
+    "0.5×",
+    "1×",
+    "2×",
+    "4×",
+    "10×",
+    "25×",
+    "50×",
+    "100×",
+    "Real time",
+  ]);
+
+  const finalStep = await timeline.getAttribute("max");
+  expect(finalStep).not.toBeNull();
+  await speed.selectOption("100");
+  await page.getByRole("button", { name: "Play comparison" }).click();
+  await expect(timeline).toHaveValue(finalStep!, { timeout: 6_000 });
+
+  await speed.selectOption("realtime");
+  await expect(speed).toHaveValue("realtime");
+  await page.getByRole("button", { name: "Play comparison" }).click();
+  await expect(timeline).toHaveValue(finalStep!, { timeout: 2_000 });
+  await expect(page.getByText(/measured$/)).toBeVisible();
+
+  await page.goto("/compare?scenario=all-pairs-matrix&algorithms=bfs,dijkstra");
+  await page.waitForLoadState("networkidle");
+  const unavailableSpeed = page.getByRole("combobox", {
+    name: "Playback speed",
+  });
+  await unavailableSpeed.selectOption("realtime");
+  await expect(unavailableSpeed).toHaveValue("realtime");
+  await expect(
+    page.getByText("No compatible runs", { exact: true }),
+  ).toBeVisible();
 });
 
 test("malformed imports fail as data without executing labels", async ({

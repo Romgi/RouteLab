@@ -453,7 +453,9 @@
 
 .graphFrame {
   position: relative;
+  height: 266px;
   min-height: 266px;
+  overflow: hidden;
   border-block: 1px solid var(--line);
   background:
     linear-gradient(var(--bg-elevated) 1px, transparent 1px),
@@ -471,15 +473,19 @@
 
 .graphFrame :global(.graph-canvas),
 .graphFrame :global(.graph-visual) {
-  height: 266px;
+  height: 100%;
+  min-height: 0;
 }
 
 .graphFrame :global(.graph-visual) {
   position: relative;
 }
 
-.graphFrame svg {
+.graphFrame :global(.graph-visual) > svg {
+  position: absolute;
   display: block;
+  inset: 0;
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
   padding: 18px;
@@ -721,7 +727,7 @@
 
 .timeline {
   display: grid;
-  grid-template-columns: auto minmax(220px, 1fr) 90px;
+  grid-template-columns: auto minmax(220px, 1fr) minmax(128px, auto);
   gap: 22px;
   align-items: center;
   width: min(1540px, calc(100% - 48px));
@@ -807,6 +813,15 @@
   padding: 1px 20px 1px 0;
   font-family: var(--font-geist-mono), monospace;
   font-size: 11px;
+}
+
+.speedField small {
+  margin-top: 2px;
+  color: var(--text-dim);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 7px;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 @media (max-width: 1280px) {
@@ -1001,9 +1016,7 @@
     text-overflow: ellipsis;
   }
 
-  .graphFrame,
-  .graphFrame :global(.graph-canvas),
-  .graphFrame :global(.graph-visual) {
+  .graphFrame {
     min-height: 235px;
     height: 235px;
   }
