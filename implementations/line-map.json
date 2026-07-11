@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "algorithm": "dijkstra",
+  "lineNumberBase": 1,
+  "endInclusive": true,
+  "description": "Maps RouteLab trace events to equivalent conceptual regions in each trusted source file.",
+  "eventToConcept": {
+    "initialize": "initialization",
+    "enqueue": "priority-queue",
+    "dequeue": "main-loop",
+    "visitNode": "main-loop",
+    "inspectEdge": "neighbor-iteration",
+    "relaxEdge": "edge-relaxation",
+    "updateDistance": "edge-relaxation",
+    "setParent": "parent-update",
+    "rejectCandidate": "stale-entry-guard",
+    "reconstructPath": "route-reconstruction",
+    "finish": "route-reconstruction"
+  },
+  "sources": {
+    "typescript": {
+      "label": "TypeScript",
+      "path": "implementations/typescript/dijkstra.ts",
+      "lineCount": 142,
+      "contentSha256": "b2c132767aa8955f87790dfe17a83c37cd01e76f876e8c3e6a323ddfe26272d3",
+      "sections": {
+        "input-validation": { "start": 83, "end": 95 },
+        "priority-queue": { "start": 22, "end": 81 },
+        "initialization": { "start": 104, "end": 111 },
+        "main-loop": { "start": 113, "end": 126 },
+        "stale-entry-guard": { "start": 114, "end": 116 },
+        "neighbor-iteration": { "start": 118, "end": 125 },
+        "edge-relaxation": { "start": 119, "end": 124 },
+        "parent-update": { "start": 122, "end": 124 },
+        "no-route": { "start": 128, "end": 131 },
+        "route-reconstruction": { "start": 133, "end": 141 }
+      }
+    },
+    "python": {
+      "label": "Python",
+      "path": "implementations/python/dijkstra.py",
+      "lineCount": 82,
+      "contentSha256": "e70d684ab63996b18e7b2c51de04ca0ca391cd128ba74f931597d91f861964ee",
+      "sections": {
+        "input-validation": { "start": 22, "end": 30 },
+        "priority-queue": { "start": 41, "end": 43 },
+        "initialization": { "start": 36, "end": 41 },
+        "main-loop": { "start": 42, "end": 57 },
+        "stale-entry-guard": { "start": 43, "end": 47 },
+        "neighbor-iteration": { "start": 49, "end": 56 },
+        "edge-relaxation": { "start": 50, "end": 56 },
+        "parent-update": { "start": 54, "end": 56 },
+        "no-route": { "start": 58, "end": 59 },
+        "route-reconstruction": { "start": 61, "end": 65 }
+      }
+    },
+    "java": {
+      "label": "Java",
+      "path": "implementations/java/Dijkstra.java",
+      "lineCount": 101,
+      "contentSha256": "39081f777d9681437a7e635c699c6ad11e65d04ab28a07959a846c22efb6eba1",
+      "sections": {
+        "input-validation": { "start": 17, "end": 33 },
+        "priority-queue": { "start": 46, "end": 49 },
+        "initialization": { "start": 39, "end": 49 },
+        "main-loop": { "start": 51, "end": 70 },
+        "stale-entry-guard": { "start": 52, "end": 58 },
+        "neighbor-iteration": { "start": 60, "end": 69 },
+        "edge-relaxation": { "start": 61, "end": 68 },
+        "parent-update": { "start": 66, "end": 68 },
+        "no-route": { "start": 72, "end": 75 },
+        "route-reconstruction": { "start": 77, "end": 85 }
+      }
+    },
+    "cpp": {
+      "label": "C++",
+      "path": "implementations/cpp/dijkstra.cpp",
+      "lineCount": 103,
+      "contentSha256": "31b569cbcb32ad2b7d9174007c2dfed2294eb56f47d3257f973c9ca92a953355",
+      "sections": {
+        "input-validation": { "start": 30, "end": 45 },
+        "priority-queue": { "start": 58, "end": 62 },
+        "initialization": { "start": 50, "end": 62 },
+        "main-loop": { "start": 64, "end": 78 },
+        "stale-entry-guard": { "start": 65, "end": 68 },
+        "neighbor-iteration": { "start": 70, "end": 77 },
+        "edge-relaxation": { "start": 71, "end": 76 },
+        "parent-update": { "start": 74, "end": 76 },
+        "no-route": { "start": 80, "end": 80 },
+        "route-reconstruction": { "start": 82, "end": 88 }
+      }
+    },
+    "go": {
+      "label": "Go",
+      "path": "implementations/go/dijkstra.go",
+      "lineCount": 128,
+      "contentSha256": "f1a67d698196802715559e31136cdebe59fad19f82686d3cc8a3ecd4cbefed7b",
+      "sections": {
+        "input-validation": { "start": 44, "end": 62 },
+        "priority-queue": { "start": 23, "end": 42 },
+        "initialization": { "start": 69, "end": 77 },
+        "main-loop": { "start": 78, "end": 97 },
+        "stale-entry-guard": { "start": 79, "end": 85 },
+        "neighbor-iteration": { "start": 87, "end": 96 },
+        "edge-relaxation": { "start": 88, "end": 95 },
+        "parent-update": { "start": 93, "end": 95 },
+        "no-route": { "start": 99, "end": 101 },
+        "route-reconstruction": { "start": 103, "end": 111 }
+      }
+    },
+    "rust": {
+      "label": "Rust",
+      "path": "implementations/rust/dijkstra.rs",
+      "lineCount": 132,
+      "contentSha256": "48496fd8569a97d8b81d20f98408f396f03d6b9a25cd1789fa3364b8f9f13ba5",
+      "sections": {
+        "input-validation": { "start": 42, "end": 54 },
+        "priority-queue": { "start": 21, "end": 40 },
+        "initialization": { "start": 59, "end": 68 },
+        "main-loop": { "start": 70, "end": 93 },
+        "stale-entry-guard": { "start": 71, "end": 76 },
+        "neighbor-iteration": { "start": 78, "end": 92 },
+        "edge-relaxation": { "start": 79, "end": 91 },
+        "parent-update": { "start": 86, "end": 91 },
+        "no-route": { "start": 95, "end": 101 },
+        "route-reconstruction": { "start": 103, "end": 112 }
+      }
+    }
+  }
+}

@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web quality and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22.13
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Run unit and integration tests
+        run: npm test
+
+      - name: Build production worker
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run selected end-to-end tests
+        run: npm run test:e2e -- tests/e2e/routelab.spec.ts
+
+      - name: Run automated accessibility audit
+        run: npm run test:e2e -- tests/e2e/accessibility.spec.ts --project=chromium
+
+      - name: Audit production and development dependencies
+        run: npm audit --audit-level=high
+
+  language-implementations:
+    name: Trusted language implementations
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22.13
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+
+      - name: Use Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Use Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Use Go 1.24
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache: false
+
+      - name: Use stable Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Install locked JavaScript dependencies
+        run: npm ci
+
+      - name: Validate code-line metadata
+        run: node implementations/validate-line-map.mjs
+
+      - name: Type-check TypeScript reference
+        run: >-
+          npx --no-install tsc implementations/typescript/dijkstra.ts --noEmit
+          --target ES2022 --module ESNext --moduleResolution bundler --strict
+          --skipLibCheck
+
+      - name: Compile and run TypeScript reference
+        run: |
+          mkdir -p "$RUNNER_TEMP/routelab-typescript"
+          npx --no-install tsc implementations/typescript/dijkstra.ts implementations/typescript/dijkstra.smoke.ts --outDir "$RUNNER_TEMP/routelab-typescript" --target ES2022 --module commonjs --moduleResolution node --strict --skipLibCheck
+          node "$RUNNER_TEMP/routelab-typescript/dijkstra.smoke.js"
+
+      - name: Run Python reference
+        run: python implementations/python/dijkstra.py
+
+      - name: Compile and run Java reference
+        run: |
+          mkdir -p "$RUNNER_TEMP/routelab-java"
+          javac -d "$RUNNER_TEMP/routelab-java" implementations/java/Dijkstra.java
+          java -cp "$RUNNER_TEMP/routelab-java" Dijkstra
+
+      - name: Compile and run C++ reference
+        run: |
+          g++ -std=c++20 -Wall -Wextra -Werror implementations/cpp/dijkstra.cpp -o "$RUNNER_TEMP/routelab-cpp"
+          "$RUNNER_TEMP/routelab-cpp"
+
+      - name: Compile and run Go reference
+        run: go run implementations/go/dijkstra.go
+
+      - name: Compile and run Rust reference
+        run: |
+          rustc --edition 2021 -D warnings implementations/rust/dijkstra.rs -o "$RUNNER_TEMP/routelab-rust"
+          "$RUNNER_TEMP/routelab-rust"
