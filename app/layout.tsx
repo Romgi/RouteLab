@@ -39,8 +39,8 @@ export async function generateMetadata(): Promise<Metadata> {
     authors: [{ name: "RouteLab" }],
     creator: "RouteLab",
     icons: {
-      icon: "/favicon.svg",
-      shortcut: "/favicon.svg",
+      icon: "/favicon.ico",
+      shortcut: "/favicon.ico",
     },
     openGraph: {
       type: "website",
