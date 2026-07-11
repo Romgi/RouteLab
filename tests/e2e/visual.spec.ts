@@ -12,6 +12,32 @@ test("Story hero visual baseline", async ({ page }) => {
   });
 });
 
+test("Story demos visual baseline", async ({ page }) => {
+  await page.goto("/");
+
+  const mapDemo = page.locator(".concept-demo");
+  await mapDemo.scrollIntoViewIfNeeded();
+  await expect(mapDemo).toHaveScreenshot("story-map-demo.png", {
+    animations: "disabled",
+    caret: "hide",
+    maxDiffPixelRatio: 0.005,
+  });
+
+  const cyclingButton = page.getByRole("button", {
+    name: "Cycling",
+    exact: true,
+  });
+  await expect(cyclingButton).toBeEnabled();
+  await cyclingButton.click();
+  const objectiveDemo = page.locator(".objective-demo");
+  await objectiveDemo.scrollIntoViewIfNeeded();
+  await expect(objectiveDemo).toHaveScreenshot("story-objective-cycling.png", {
+    animations: "disabled",
+    caret: "hide",
+    maxDiffPixelRatio: 0.005,
+  });
+});
+
 test("Lab initial state visual baseline", async ({ page }) => {
   await page.goto("/lab");
   await expect(

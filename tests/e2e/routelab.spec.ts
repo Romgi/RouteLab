@@ -15,6 +15,95 @@ test("Story Mode leads into the working Algorithm Lab", async ({ page }) => {
   ).toBeEnabled();
 });
 
+test("landing demo geometry stays contained and connected", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const morphSlider = page.getByRole("slider", {
+    name: "Transform map into graph",
+  });
+  await expect(morphSlider).toBeEnabled();
+  await morphSlider.press("Home");
+  await expect(morphSlider).toHaveValue("0");
+  await expect
+    .poll(() =>
+      page
+        .locator(".concept-map-layer")
+        .evaluate((layer) => Number(getComputedStyle(layer).opacity)),
+    )
+    .toBeGreaterThan(0.99);
+  await expect
+    .poll(() =>
+      page
+        .locator(".concept-graph-layer")
+        .evaluate((layer) => Number(getComputedStyle(layer).opacity)),
+    )
+    .toBeLessThan(0.01);
+
+  await morphSlider.press("End");
+  await expect(morphSlider).toHaveValue("100");
+  await expect
+    .poll(() =>
+      page
+        .locator(".concept-map-layer")
+        .evaluate((layer) => Number(getComputedStyle(layer).opacity)),
+    )
+    .toBeLessThan(0.01);
+  await expect
+    .poll(() =>
+      page
+        .locator(".concept-graph-layer")
+        .evaluate((layer) => Number(getComputedStyle(layer).opacity)),
+    )
+    .toBeGreaterThan(0.99);
+
+  for (const objective of ["Distance", "Time", "Turns", "Cycling"]) {
+    await page.getByRole("button", { name: objective, exact: true }).click();
+    const geometry = await page.evaluate(() => {
+      const map = document.querySelector<HTMLElement>(".objective-map");
+      const path = document.querySelector<SVGPathElement>(".objective-route");
+      const startPin = document.querySelector<HTMLElement>(".pin-start");
+      const endPin = document.querySelector<HTMLElement>(".pin-end");
+      const matrix = path?.getScreenCTM();
+      if (!map || !path || !startPin || !endPin || !matrix) {
+        throw new Error("Objective route geometry is unavailable");
+      }
+
+      const toScreen = (point: DOMPoint) => ({
+        x: matrix.a * point.x + matrix.c * point.y + matrix.e,
+        y: matrix.b * point.x + matrix.d * point.y + matrix.f,
+      });
+      const first = toScreen(path.getPointAtLength(0));
+      const last = toScreen(path.getPointAtLength(path.getTotalLength()));
+      const startRect = startPin.getBoundingClientRect();
+      const endRect = endPin.getBoundingClientRect();
+      const routeRect = path.getBoundingClientRect();
+      const mapRect = map.getBoundingClientRect();
+
+      return {
+        startDelta: Math.hypot(
+          first.x - (startRect.left + startRect.width / 2),
+          first.y - (startRect.top + startRect.height / 2),
+        ),
+        endDelta: Math.hypot(
+          last.x - (endRect.left + endRect.width / 2),
+          last.y - (endRect.top + endRect.height / 2),
+        ),
+        contained:
+          routeRect.left >= mapRect.left - 1 &&
+          routeRect.top >= mapRect.top - 1 &&
+          routeRect.right <= mapRect.right + 1 &&
+          routeRect.bottom <= mapRect.bottom + 1,
+      };
+    });
+
+    expect(geometry.startDelta).toBeLessThan(1.5);
+    expect(geometry.endDelta).toBeLessThan(1.5);
+    expect(geometry.contained).toBe(true);
+  }
+});
+
 test("Lab playback can pause, step, scrub, and switch source language", async ({
   page,
 }) => {

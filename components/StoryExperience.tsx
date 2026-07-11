@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import {
   replayTrace as replayAlgorithmTrace,
   runAlgorithm,
@@ -56,25 +56,44 @@ const routeEdgeIndexes = new Set([0, 3, 9, 14, 19, 22]);
 const objectives = {
   Distance: {
     value: "4.8 km",
-    route: "short",
+    route: "M 15 68 L 32 58 L 49 48 L 68 42 L 85 32",
     note: "Direct local streets win.",
   },
   Time: {
     value: "9 min",
-    route: "fast",
+    route: "M 15 68 L 24 82 L 50 82 L 72 60 L 85 32",
     note: "A longer arterial avoids slow blocks.",
   },
   Turns: {
     value: "3 turns",
-    route: "simple",
+    route: "M 15 68 L 15 50 L 62 50 L 62 32 L 85 32",
     note: "The simplest route stays on two avenues.",
   },
   Cycling: {
     value: "82% protected",
-    route: "safe",
+    route: "M 15 68 L 27 58 L 38 62 L 49 47 L 61 52 L 73 39 L 85 32",
     note: "Safety multipliers favor protected lanes.",
   },
 } as const;
+
+const objectiveRoads = [
+  {
+    id: "local",
+    path: "M 15 68 L 32 58 L 49 48 L 68 42 L 85 32",
+  },
+  {
+    id: "arterial",
+    path: "M 15 68 L 24 82 L 50 82 L 72 60 L 85 32",
+  },
+  {
+    id: "simple",
+    path: "M 15 68 L 15 50 L 62 50 L 62 32 L 85 32",
+  },
+  {
+    id: "protected",
+    path: "M 15 68 L 27 58 L 38 62 L 49 47 L 61 52 L 73 39 L 85 32",
+  },
+] as const;
 
 const raceAlgorithms = [
   {
@@ -272,33 +291,110 @@ function MiniNetwork({
   );
 }
 
+const subscribeToHydration = () => () => undefined;
+const getHydratedSnapshot = () => true;
+const getServerHydratedSnapshot = () => false;
+
+function useHydrated() {
+  return useSyncExternalStore(
+    subscribeToHydration,
+    getHydratedSnapshot,
+    getServerHydratedSnapshot,
+  );
+}
+
 function MapToGraph() {
   const [progress, setProgress] = useState(46);
+  const hydrated = useHydrated();
+  const mapOpacity = Math.max(0, 1 - progress / 82);
+  const graphOpacity = Math.max(0, (progress - 12) / 88);
   return (
     <div className="concept-demo">
       <div
         className="concept-stage"
-        style={{ "--map-progress": `${progress}%` } as React.CSSProperties}
+        style={
+          {
+            "--map-layer-opacity": mapOpacity,
+            "--graph-layer-opacity": graphOpacity,
+          } as React.CSSProperties
+        }
       >
-        <div className="map-block block-a" />
-        <div className="map-block block-b" />
-        <div className="map-block block-c" />
-        <div className="map-road road-a" />
-        <div className="map-road road-b" />
-        <div className="map-road road-c" />
-        <div className="graph-edge edge-a">
-          <span>4</span>
-        </div>
-        <div className="graph-edge edge-b">
-          <span>7</span>
-        </div>
-        <div className="graph-edge edge-c">
-          <span>3</span>
-        </div>
-        <i className="graph-node node-a">A</i>
-        <i className="graph-node node-b">B</i>
-        <i className="graph-node node-c">C</i>
-        <i className="graph-node node-d">D</i>
+        <svg
+          className="concept-visual"
+          viewBox="0 0 680 480"
+          aria-hidden="true"
+        >
+          <g className="concept-map-layer">
+            <g className="concept-buildings">
+              <path d="M48 42H248V98L151 103L95 126L48 112Z" />
+              <path d="M42 242L118 177L191 205L166 296L91 334H42Z" />
+              <path d="M285 48H465L526 82L474 154L386 188L310 151Z" />
+              <path d="M407 279L519 211L632 205V417H410Z" />
+              <path d="M251 306L335 260L386 319L351 418H260Z" />
+            </g>
+            <g className="concept-roads">
+              <path d="M35 97L118 130L360 225L560 140L645 104" />
+              <path d="M74 27L118 130L235 360L263 452" />
+              <path d="M31 421L235 360L360 225L474 39" />
+              <path d="M235 360L430 330L560 140" />
+            </g>
+            <g className="concept-street-labels">
+              <text x="202" y="149">
+                Mercer Street
+              </text>
+              <text x="410" y="195">
+                Harbor Road
+              </text>
+              <text x="275" y="349">
+                8th Avenue
+              </text>
+            </g>
+          </g>
+
+          <g className="concept-graph-layer">
+            <g className="concept-graph-edges">
+              <path d="M118 130L360 225" />
+              <path d="M118 130L235 360" />
+              <path d="M360 225L235 360" />
+              <path d="M360 225L560 140" />
+              <path d="M235 360L430 330L560 140" />
+            </g>
+            <g className="concept-weights">
+              <text x="234" y="164">
+                4
+              </text>
+              <text x="158" y="252">
+                7
+              </text>
+              <text x="306" y="303">
+                3
+              </text>
+              <text x="456" y="168">
+                5
+              </text>
+              <text x="418" y="311">
+                6
+              </text>
+            </g>
+            {[
+              [118, 130, "A"],
+              [360, 225, "B"],
+              [235, 360, "C"],
+              [560, 140, "D"],
+            ].map(([x, y, label]) => (
+              <g
+                className="concept-graph-node"
+                transform={`translate(${x} ${y})`}
+                key={label}
+              >
+                <circle r="18" />
+                <text textAnchor="middle" dominantBaseline="central">
+                  {label}
+                </text>
+              </g>
+            ))}
+          </g>
+        </svg>
       </div>
       <label className="range-control">
         <span>Map</span>
@@ -309,6 +405,7 @@ function MapToGraph() {
           value={progress}
           onChange={(event) => setProgress(Number(event.target.value))}
           aria-label="Transform map into graph"
+          disabled={!hydrated}
         />
         <span>Graph</span>
       </label>
@@ -325,6 +422,7 @@ function MapToGraph() {
 
 function ObjectiveDemo() {
   const [objective, setObjective] = useState<keyof typeof objectives>("Time");
+  const hydrated = useHydrated();
   const result = objectives[objective];
   return (
     <div className="objective-demo">
@@ -336,6 +434,7 @@ function ObjectiveDemo() {
               type="button"
               aria-pressed={objective === item}
               onClick={() => setObjective(item)}
+              disabled={!hydrated}
             >
               {item}
             </button>
@@ -343,7 +442,34 @@ function ObjectiveDemo() {
         )}
       </div>
       <div className="objective-map">
-        <div className={`objective-route route-${result.route}`} />
+        <svg
+          className="objective-street-map"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <g className="objective-road-network">
+            {objectiveRoads.map((road) => (
+              <path
+                className={`objective-road road-${road.id}`}
+                d={road.path}
+                key={road.id}
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+            <path
+              className="objective-road cross-street"
+              d="M 6 36 L 32 58 L 49 47 L 62 50 L 93 72"
+              vectorEffect="non-scaling-stroke"
+            />
+          </g>
+          <path
+            className="objective-route"
+            d={result.route}
+            key={objective}
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
         <span className="map-pin pin-start">S</span>
         <span className="map-pin pin-end">G</span>
         <span className="road-label label-local">local · 30 km/h</span>

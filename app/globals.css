@@ -746,123 +746,79 @@ button {
   background-size: 30px 30px;
 }
 
-.map-block {
+.concept-visual {
   position: absolute;
-  border: 1px solid var(--line-strong);
-  background: var(--bg-elevated);
-  opacity: calc((100 - var(--map-progress, 50%)) / 100);
-  transition: opacity 180ms ease;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-.block-a {
-  inset: 9% 53% 55% 8%;
-}
-.block-b {
-  inset: 56% 58% 8% 5%;
-}
-.block-c {
-  inset: 18% 7% 13% 63%;
+.concept-map-layer,
+.concept-graph-layer {
+  transition: opacity 220ms ease;
 }
 
-.map-road {
-  position: absolute;
-  height: 16px;
-  background: var(--line-strong);
-  opacity: 0.55;
+.concept-map-layer {
+  opacity: var(--map-layer-opacity, 0.44);
 }
 
-.road-a {
-  width: 73%;
-  left: 10%;
-  top: 43%;
-  transform: rotate(-14deg);
-}
-.road-b {
-  width: 65%;
-  left: 13%;
-  top: 65%;
-  transform: rotate(27deg);
-}
-.road-c {
-  width: 53%;
-  left: 43%;
-  top: 37%;
-  transform: rotate(67deg);
+.concept-graph-layer {
+  opacity: var(--graph-layer-opacity, 0.39);
 }
 
-.graph-edge {
-  position: absolute;
-  height: 2px;
-  background: var(--cyan);
-  transform-origin: left center;
-  opacity: calc(var(--map-progress, 50%) / 100);
-  transition: opacity 180ms ease;
+.concept-buildings path {
+  fill: var(--bg-elevated);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 
-.graph-edge span {
-  position: absolute;
-  left: 50%;
-  top: -22px;
-  padding: 1px 5px;
-  background: var(--bg);
-  color: var(--cyan);
+.concept-roads path {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 10;
+  vector-effect: non-scaling-stroke;
+}
+
+.concept-street-labels text {
+  fill: var(--text-dim);
   font-family: var(--font-geist-mono), monospace;
   font-size: 10px;
+  letter-spacing: 0.04em;
 }
 
-.edge-a {
-  width: 50%;
-  left: 15%;
-  top: 27%;
-  transform: rotate(25deg);
-}
-.edge-b {
-  width: 42%;
-  left: 15%;
-  top: 27%;
-  transform: rotate(72deg);
-}
-.edge-c {
-  width: 48%;
-  left: 40%;
-  top: 75%;
-  transform: rotate(-54deg);
+.concept-graph-edges path {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
 }
 
-.graph-node {
-  position: absolute;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border: 1px solid var(--cyan);
-  border-radius: 50%;
-  background: var(--bg);
-  color: var(--text);
+.concept-weights text {
+  fill: var(--cyan);
+  stroke: var(--bg);
+  stroke-width: 7px;
+  paint-order: stroke fill;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 10px;
-  font-style: normal;
-  transform: translate(-50%, -50%)
-    scale(calc(0.6 + var(--map-progress, 50%) / 250));
-  transition: transform 180ms ease;
+  font-size: 12px;
+  text-anchor: middle;
 }
 
-.node-a {
-  left: 15%;
-  top: 27%;
+.concept-graph-node circle {
+  fill: var(--bg);
+  stroke: var(--cyan);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
 }
-.node-b {
-  left: 61%;
-  top: 49%;
-}
-.node-c {
-  left: 40%;
-  top: 75%;
-}
-.node-d {
-  left: 78%;
-  top: 29%;
+
+.concept-graph-node text {
+  fill: var(--text);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
 }
 
 .range-control {
@@ -978,65 +934,56 @@ input[type="range"] {
   min-height: 500px;
   overflow: hidden;
   background:
-    linear-gradient(
-      32deg,
-      transparent 0 35%,
-      var(--line) 35.3% 36%,
-      transparent 36.3%
-    ),
-    linear-gradient(
-      138deg,
-      transparent 0 48%,
-      var(--line) 48.3% 49%,
-      transparent 49.3%
-    ),
-    linear-gradient(
-      78deg,
-      transparent 0 55%,
-      var(--line) 55.3% 56%,
-      transparent 56.3%
-    ),
     linear-gradient(var(--bg-elevated) 1px, transparent 1px),
     linear-gradient(90deg, var(--bg-elevated) 1px, transparent 1px);
-  background-size:
-    auto,
-    auto,
-    auto,
-    34px 34px,
-    34px 34px;
+  background-size: 34px 34px;
+}
+
+.objective-street-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.objective-road {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 7;
+}
+
+.objective-road.road-local {
+  stroke-width: 6;
+}
+
+.objective-road.road-arterial {
+  stroke-width: 10;
+}
+
+.objective-road.road-protected {
+  stroke-dasharray: 6 5;
+  stroke-width: 5;
+}
+
+.objective-road.cross-street {
+  opacity: 0.62;
+  stroke-width: 5;
 }
 
 .objective-route {
-  position: absolute;
-  left: 15%;
-  top: 68%;
-  width: 70%;
-  height: 2px;
-  background: var(--cyan);
-  transform-origin: left;
-  transition:
-    clip-path 260ms ease,
-    transform 260ms ease;
-}
-
-.route-short {
-  transform: rotate(-27deg);
-}
-.route-fast {
-  transform: rotate(-18deg) skewX(-22deg);
-  height: 3px;
-}
-.route-simple {
-  transform: rotate(-9deg);
-  width: 73%;
-}
-.route-safe {
-  transform: rotate(-36deg) skewX(25deg);
+  fill: none;
+  stroke: var(--cyan);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+  animation: objective-route-in 220ms ease-out both;
 }
 
 .map-pin {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   display: grid;
   place-items: center;
   width: 31px;
@@ -1047,19 +994,21 @@ input[type="range"] {
   color: var(--cyan);
   font-family: var(--font-geist-mono), monospace;
   font-size: 10px;
+  transform: translate(-50%, -50%);
 }
 
 .pin-start {
-  left: 13%;
-  top: 64%;
+  left: 15%;
+  top: 68%;
 }
 .pin-end {
-  right: 13%;
-  top: 29%;
+  left: 85%;
+  top: 32%;
 }
 
 .road-label {
   position: absolute;
+  z-index: 2;
   color: var(--text-dim);
   font-family: var(--font-geist-mono), monospace;
   font-size: 9px;
@@ -1101,6 +1050,15 @@ input[type="range"] {
   margin: 8px 0 0;
   color: var(--text-muted);
   font-size: 12px;
+}
+
+@keyframes objective-route-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .race-section {
@@ -1774,8 +1732,9 @@ input[type="range"] {
     grid-template-columns: 1fr;
   }
   .segmented-control {
-    flex-direction: row;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
     padding: 10px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
@@ -1784,8 +1743,9 @@ input[type="range"] {
     display: none;
   }
   .segmented-control button {
-    min-width: 95px;
-    border-bottom: 0;
+    min-width: 0;
+    min-height: 44px;
+    border-bottom: 1px solid var(--line);
   }
   .objective-map {
     min-height: 340px;
