@@ -8,7 +8,7 @@ The application is an educational simulator, not a navigation service. Its built
 
 - **Story Mode (`/`)** introduces graphs, route objectives, search strategies, source concepts, scenarios, and trace architecture through responsive interactive demonstrations.
 - **Algorithm Lab (`/lab`)** runs one of seven algorithms with scenario, cost-model, heuristic, language, closure, speed, and timeline controls. It includes metrics, frontier/current-event inspection, node details, and an accessible graph table.
-- **Compare Mode (`/compare`)** synchronizes two to four compatible algorithms on the same graph and playback clock (two lanes by default).
+- **Compare Mode (`/compare`)** synchronizes two to four compatible algorithms on the same graph, with playback from 0.5× to 100× and a measured real-time option (two lanes by default).
 - **Code Explorer (`/code`)** presents curated read-only Dijkstra excerpts in six languages with conceptual line highlighting, copy, and download actions.
 - **Documentation (`/docs`)** provides an in-product guide; the [`docs/`](docs/) directory contains the detailed engineering reference.
 

@@ -61,3 +61,14 @@ test("Compare Mode visual baseline", async ({ page }) => {
     maxDiffPixelRatio: 0.005,
   });
 });
+
+test("Compare graph visual baseline", async ({ page }) => {
+  await page.goto("/compare");
+  const graphFrame = page.getByTestId("compare-graph-frame").first();
+  await graphFrame.scrollIntoViewIfNeeded();
+  await expect(graphFrame).toHaveScreenshot("compare-graph.png", {
+    animations: "disabled",
+    caret: "hide",
+    maxDiffPixelRatio: 0.005,
+  });
+});
