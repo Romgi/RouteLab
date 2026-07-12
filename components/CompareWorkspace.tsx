@@ -25,7 +25,8 @@ import {
 import styles from "./CompareWorkspace.module.css";
 
 const DEFAULT_ALGORITHMS: readonly AlgorithmId[] = ["dijkstra", "astar"];
-const PLAYBACK_SPEEDS = [0.5, 1, 2, 4] as const;
+const PLAYBACK_SPEEDS = [0.5, 1, 2, 4, 10, 50, 100] as const;
+type PlaybackSpeed = (typeof PLAYBACK_SPEEDS)[number] | "realtime";
 
 const COST_LABELS: Readonly<Record<CostMetric, string>> = {
   weight: "Edge weight",
@@ -217,7 +218,7 @@ export function CompareWorkspace({
   );
   const [step, setStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [playbackSpeed, setPlaybackSpeed] = useState<PlaybackSpeed>(1);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "address-bar">(
     "idle",
   );
@@ -274,6 +275,18 @@ export function CompareWorkspace({
   useEffect(() => {
     if (!isPlaying) return undefined;
 
+    if (playbackSpeed === "realtime") {
+      const timeout = window.setTimeout(() => {
+        setStep(maxStep);
+        setIsPlaying(false);
+        setAnnouncement(
+          `Comparison finished. ${validRuns.length} traces are complete.`,
+        );
+      }, 16);
+
+      return () => window.clearTimeout(timeout);
+    }
+
     const interval = window.setInterval(
       () => {
         setStep((currentStep) => {
@@ -287,7 +300,7 @@ export function CompareWorkspace({
           return nextStep;
         });
       },
-      Math.max(70, Math.round(680 / playbackSpeed)),
+      Math.max(4, Math.round(680 / playbackSpeed)),
     );
 
     return () => window.clearInterval(interval);
@@ -862,13 +875,21 @@ export function CompareWorkspace({
             <span>Speed</span>
             <select
               value={playbackSpeed}
-              onChange={(event) => setPlaybackSpeed(Number(event.target.value))}
+              onChange={(event) => {
+                const value = event.target.value;
+                setPlaybackSpeed(
+                  value === "realtime"
+                    ? "realtime"
+                    : (Number(value) as PlaybackSpeed),
+                );
+              }}
             >
               {PLAYBACK_SPEEDS.map((speed) => (
                 <option key={speed} value={speed}>
                   {speed}×
                 </option>
               ))}
+              <option value="realtime">Realtime</option>
             </select>
           </label>
         </div>
