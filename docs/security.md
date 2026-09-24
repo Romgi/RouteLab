@@ -57,7 +57,7 @@ manifest-src 'self';
 upgrade-insecure-requests
 ```
 
-The inline script exception is currently required by Next/vinext's framework-generated React Server Component bootstrap. No visitor-controlled value is interpolated into that bootstrap, and `unsafe-eval` is not allowed. The inline style exception permits framework/React style attributes. These exceptions weaken CSP defense in depth, so removing them through nonce/hash support is tracked as a hardening improvement. WebSocket connections support the local development transport; RouteLab application code does not open arbitrary endpoints. Security review must use a production build.
+The inline script exception is currently required by Next.js's framework-generated React Server Component bootstrap. No visitor-controlled value is interpolated into that bootstrap, and `unsafe-eval` is not allowed. The inline style exception permits framework/React style attributes. These exceptions weaken CSP defense in depth, so removing them through nonce/hash support is tracked as a hardening improvement. WebSocket connections support the local development transport; RouteLab application code does not open arbitrary endpoints. Security review must use a production build.
 
 Additional headers include `X-Content-Type-Options: nosniff`, a restrictive `Referrer-Policy`, a minimal `Permissions-Policy`, cross-origin isolation policies where compatible, and frame denial through CSP. Production-mode responses emit HSTS; browsers apply it only over HTTPS, so a local HTTP production preview does not simulate transport security.
 

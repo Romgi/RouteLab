@@ -2,9 +2,11 @@
   min-height: 100svh;
   padding: var(--header-height) 0 82px;
   background:
-    linear-gradient(180deg,
+    linear-gradient(
+      180deg,
       color-mix(in srgb, var(--cyan-soft) 24%, transparent),
-      transparent 310px),
+      transparent 310px
+    ),
     var(--bg);
   color: var(--text);
 }
@@ -44,7 +46,7 @@
   font-weight: 400;
 }
 
-.introCopy>p {
+.introCopy > p {
   margin: 0;
   color: var(--text-muted);
   font-size: 14px;
@@ -95,8 +97,8 @@
 }
 
 .configurationHeading span,
-.field>span,
-.speedField>span {
+.field > span,
+.speedField > span {
   color: var(--text-dim);
   font-family: var(--font-geist-mono), monospace;
   font-size: 8px;
@@ -201,7 +203,7 @@
   font-size: 10px;
 }
 
-.scenarioContext>span {
+.scenarioContext > span {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -248,23 +250,23 @@
   background: var(--bg-raised);
 }
 
-.sharedState>span {
+.sharedState > span {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--text-dim);
 }
 
-.sharedState[data-state="running"]>span {
+.sharedState[data-state="running"] > span {
   background: var(--cyan);
   box-shadow: 0 0 0 4px var(--cyan-soft);
 }
 
-.sharedState[data-state="finished"]>span {
+.sharedState[data-state="finished"] > span {
   background: var(--green);
 }
 
-.sharedState[data-state="unavailable"]>span {
+.sharedState[data-state="unavailable"] > span {
   background: var(--red);
 }
 
@@ -355,7 +357,7 @@
 
 .laneIndex span,
 .laneIndex small,
-.algorithmFacts>span:first-child {
+.algorithmFacts > span:first-child {
   color: var(--text-dim);
   font-family: var(--font-geist-mono), monospace;
   font-size: 8px;
@@ -571,7 +573,7 @@
   border-bottom: 1px solid var(--line);
 }
 
-.eventPanel>div {
+.eventPanel > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -606,7 +608,7 @@
   border-bottom: 1px solid var(--line);
 }
 
-.metrics>div {
+.metrics > div {
   min-width: 0;
   min-height: 77px;
   padding: 13px 17px;
@@ -614,11 +616,11 @@
   border-bottom: 1px solid var(--line);
 }
 
-.metrics>div:nth-child(2n) {
+.metrics > div:nth-child(2n) {
   border-right: 0;
 }
 
-.metrics>div:nth-last-child(-n + 2) {
+.metrics > div:nth-last-child(-n + 2) {
   border-bottom: 0;
 }
 
@@ -675,13 +677,15 @@
   padding: 34px 22px;
   border-top: 1px solid var(--line);
   background:
-    repeating-linear-gradient(-45deg,
+    repeating-linear-gradient(
+      -45deg,
       transparent 0 9px,
-      color-mix(in srgb, var(--red) 4%, transparent) 9px 10px),
+      color-mix(in srgb, var(--red) 4%, transparent) 9px 10px
+    ),
     var(--bg);
 }
 
-.unavailable>span {
+.unavailable > span {
   display: grid;
   place-items: center;
   width: 27px;
@@ -776,7 +780,7 @@
   min-width: 0;
 }
 
-.scrubber>span {
+.scrubber > span {
   display: flex;
   justify-content: space-between;
   color: var(--text-dim);
@@ -820,7 +824,6 @@
 }
 
 @media (max-width: 1280px) {
-
   .intro,
   .configurationInner,
   .scenarioContext {
@@ -840,7 +843,7 @@
     grid-column: span 2;
   }
 
-  .configurationActions>button {
+  .configurationActions > button {
     flex: 1;
   }
 
@@ -945,7 +948,6 @@
 }
 
 @media (max-width: 540px) {
-
   .intro,
   .configurationInner,
   .scenarioContext {
@@ -956,7 +958,7 @@
     padding-top: 48px;
   }
 
-  .introCopy>p {
+  .introCopy > p {
     font-size: 13px;
   }
 

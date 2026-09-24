@@ -43,7 +43,7 @@ jobs:
       - name: Run unit and integration tests
         run: npm test
 
-      - name: Build production worker
+      - name: Build production Next.js application
         run: npm run build
 
       - name: Install Playwright Chromium

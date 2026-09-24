@@ -1,12 +1,12 @@
 # Architecture
 
-RouteLab is a client-first Next.js App Router application built through `vinext`, Vite, and the Cloudflare worker adapter. Correctness-critical graph code is framework-independent; React owns selection, playback, and presentation state.
+RouteLab is a client-first Next.js App Router application built with native Next.js and hosted on Vercel. Correctness-critical graph code is framework-independent; React owns selection, playback, and presentation state.
 
 ## Runtime shape
 
 ```text
 HTTP request
-  -> vinext/Cloudflare delivery worker
+  -> Vercel / Next.js route delivery
   -> App Router route and shared layout
   -> client workspace
        -> validated scenario
@@ -15,7 +15,7 @@ HTTP request
        -> SVG + inspector + metrics + accessible graph table
 ```
 
-The Cloudflare worker serves/render routes; it is not an algorithm-computation worker. RouteLab v1 has no API-backed persistence, database, account system, arbitrary outbound fetch, or server-side benchmark service.
+Next.js renders the application routes and delivers their client assets; algorithms execute in the browser. RouteLab v1 has no API-backed persistence, database, account system, arbitrary outbound fetch, or server-side benchmark service.
 
 ## Routes
 
@@ -40,10 +40,10 @@ lib/code-snippets.ts         browser-bundled trusted code presentation
 implementations/             compile/smoke-checked standalone Dijkstra sources
 docs/                        design, correctness, security, and operations
 tests/                       unit, integration, rendered-route, and E2E coverage
-worker/ + vite.config.ts      vinext/Cloudflare delivery integration
+vercel.json                  native Next.js deployment configuration
 ```
 
-Dependencies point inward: routes depend on components; components may depend on domain modules; domain modules never depend on React, DOM APIs, CSS, routes, animation timers, or Cloudflare bindings. Scenario modules may use shared algorithm identifiers/types, but algorithms operate on the minimal normalized graph contract rather than the educational scenario envelope.
+Dependencies point inward: routes depend on components; components may depend on domain modules; domain modules never depend on React, DOM APIs, CSS, routes, animation timers, or hosting APIs. Scenario modules may use shared algorithm identifiers/types, but algorithms operate on the minimal normalized graph contract rather than the educational scenario envelope.
 
 ## Scenario loading and normalization
 
@@ -150,4 +150,4 @@ Expected failures use explicit states: invalid graph/import/share data, incompat
 
 ## Deployment
 
-`npm run build` invokes vinext/Vite to produce the Cloudflare-compatible output. `npm run start` serves the production build locally. The project carries no required environment variables or bindings. Response security headers are configured at the application/hosting layer; TLS and HSTS activation are production-platform responsibilities.
+`npm run build` invokes `next build` to produce the native Next.js output in `.next/`. `npm run start` serves that production build locally, including during Playwright E2E checks. `vercel.json` selects the Next.js framework preset, `npm ci` for locked installation, and `npm run build` for production builds. The project carries no required environment variables or bindings. Response security headers remain configured in `next.config.ts`, including HSTS for production; Vercel handles TLS termination and delivery.

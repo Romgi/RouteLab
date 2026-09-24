@@ -2,7 +2,7 @@
 
 ## Scope and security objectives
 
-This model covers the RouteLab browser application, its Cloudflare/vinext delivery worker, repository-controlled scenarios and source examples, JSON import/export/share state, and the CI pipeline. It excludes the security of a visitor's device, browser extensions, GitHub itself, and the underlying hosting provider except where RouteLab configuration affects them.
+This model covers the RouteLab browser application, its native Next.js delivery on Vercel, repository-controlled scenarios and source examples, JSON import/export/share state, and the CI pipeline. It excludes the security of a visitor's device, browser extensions, GitHub itself, and the underlying hosting provider except where RouteLab configuration affects them.
 
 The primary objectives are:
 

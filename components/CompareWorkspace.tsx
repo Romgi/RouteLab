@@ -40,7 +40,6 @@ import {
 import styles from "./CompareWorkspace.module.css";
 
 const DEFAULT_ALGORITHMS: readonly AlgorithmId[] = ["dijkstra", "astar"];
-const PLAYBACK_SPEEDS = [0.5, 1, 2, 4] as const;
 
 const COST_LABELS: Readonly<Record<CostMetric, string>> = {
   weight: "Edge weight",
@@ -214,14 +213,14 @@ export function CompareWorkspace({
       : [...DEFAULT_ALGORITHMS];
   const resolvedInitialCostMetric =
     initialCostMetric &&
-      isCostMetric(initialCostMetric) &&
-      initialScenario.availableCostMetrics.includes(initialCostMetric)
+    isCostMetric(initialCostMetric) &&
+    initialScenario.availableCostMetrics.includes(initialCostMetric)
       ? initialCostMetric
       : initialScenario.defaultCostMetric;
   const resolvedInitialHeuristic =
     initialHeuristicId &&
-      isHeuristicId(initialHeuristicId) &&
-      initialScenario.allowedHeuristics.includes(initialHeuristicId)
+    isHeuristicId(initialHeuristicId) &&
+    initialScenario.allowedHeuristics.includes(initialHeuristicId)
       ? initialHeuristicId
       : initialScenario.defaultHeuristic;
   const [scenarioId, setScenarioId] = useState(initialScenario.id);
@@ -237,7 +236,16 @@ export function CompareWorkspace({
   const [step, setStep] = useState(0);
   const stepRef = useRef(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [playbackMode, setPlaybackMode] = useState<PlaybackMode>(1);
+  const [realtimeElapsedMs, setRealtimeElapsedMs] = useState<number | null>(
+    null,
+  );
+  const realtimeElapsedRef = useRef(0);
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getHydratedSnapshot,
+    getServerHydratedSnapshot,
+  );
   const [copyState, setCopyState] = useState<"idle" | "copied" | "address-bar">(
     "idle",
   );
@@ -284,10 +292,10 @@ export function CompareWorkspace({
   const resolveLaneStep = (result: AlgorithmResult) =>
     playbackMode === "realtime" && realtimeElapsedMs !== null
       ? getRealtimeLaneStep({
-        elapsedMs: realtimeElapsedMs,
-        executionTimeMs: result.metrics.executionTimeMs,
-        traceLength: result.trace.length,
-      })
+          elapsedMs: realtimeElapsedMs,
+          executionTimeMs: result.metrics.executionTimeMs,
+          traceLength: result.trace.length,
+        })
       : Math.min(step, Math.max(0, result.trace.length - 1));
   const completedRunCount = validRuns.filter(
     (run) => resolveLaneStep(run.result) >= run.result.trace.length - 1,
@@ -306,36 +314,51 @@ export function CompareWorkspace({
   useEffect(() => {
     if (!isPlaying) return undefined;
 
-    if (playbackSpeed === "realtime") {
-      const timeout = window.setTimeout(() => {
-        setStep(maxStep);
+    const startStep = stepRef.current;
+    const realtimeStartElapsedMs = realtimeElapsedRef.current;
+    const durationMs = getPlaybackDurationMs({
+      startStep,
+      maxStep,
+      mode: playbackMode,
+      realtimeDurationMs: maxExecutionTimeMs,
+      realtimeStartElapsedMs,
+    });
+    const startedAt = performance.now();
+    let frameId: number;
+
+    const advance = (timestamp: number) => {
+      const elapsedMs = Math.max(0, timestamp - startedAt);
+      const nextStep = getTimelineStepAtElapsed({
+        startStep,
+        maxStep,
+        elapsedMs,
+        durationMs,
+      });
+      stepRef.current = nextStep;
+      setStep(nextStep);
+
+      if (playbackMode === "realtime") {
+        const nextElapsedMs = Math.min(
+          maxExecutionTimeMs,
+          realtimeStartElapsedMs + elapsedMs,
+        );
+        realtimeElapsedRef.current = nextElapsedMs;
+        setRealtimeElapsedMs(nextElapsedMs);
+      }
+
+      if (nextStep >= maxStep) {
         setIsPlaying(false);
         setAnnouncement(
           `Comparison finished. ${validRuns.length} traces are complete.`,
         );
-      }, 16);
+      } else {
+        frameId = window.requestAnimationFrame(advance);
+      }
+    };
 
-      return () => window.clearTimeout(timeout);
-    }
-
-    const interval = window.setInterval(
-      () => {
-        setStep((currentStep) => {
-          const nextStep = Math.min(maxStep, currentStep + 1);
-          if (nextStep >= maxStep) {
-            setIsPlaying(false);
-            setAnnouncement(
-              `Comparison finished. ${validRuns.length} traces are complete.`,
-            );
-          }
-          return nextStep;
-        });
-      },
-      Math.max(70, Math.round(680 / playbackSpeed)),
-    );
-
-    return () => window.clearInterval(interval);
-  }, [isPlaying, maxStep, playbackSpeed, validRuns.length]);
+    frameId = window.requestAnimationFrame(advance);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [isPlaying, maxStep, playbackMode, maxExecutionTimeMs, validRuns.length]);
 
   function resetTimeline(message: string) {
     setIsPlaying(false);
@@ -849,8 +872,8 @@ export function CompareWorkspace({
                         >
                           {hydrated
                             ? formatExecutionTime(
-                              result.metrics.executionTimeMs,
-                            )
+                                result.metrics.executionTimeMs,
+                              )
                             : "—"}
                         </dd>
                       </div>
@@ -977,14 +1000,16 @@ export function CompareWorkspace({
           <label className={styles.speedField}>
             <span>Speed</span>
             <select
-              value={playbackSpeed}
-              onChange={(event) => setPlaybackSpeed(Number(event.target.value))}
+              value={playbackMode}
+              onChange={(event) => handlePlaybackModeChange(event.target.value)}
+              aria-label="Playback speed"
             >
               {PLAYBACK_SPEEDS.map((speed) => (
                 <option key={speed} value={speed}>
                   {speed}×
                 </option>
               ))}
+              <option value="realtime">Real time</option>
             </select>
             <small suppressHydrationWarning>
               {playbackMode === "realtime"

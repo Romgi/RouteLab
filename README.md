@@ -39,7 +39,7 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by vinext. No database, account, API key, or environment variable is required.
+Open the local URL printed by Next.js. No database, account, API key, or environment variable is required.
 
 ### Production build
 
@@ -48,14 +48,14 @@ npm run build
 npm run start
 ```
 
-`vinext` and Vite produce the Cloudflare-compatible worker build. Production response headers include CSP, content-type sniffing protection, referrer/permissions policies, cross-origin policies, and HSTS on production builds.
+Next.js produces the production application in `.next/`. Vercel uses the native Next.js framework preset with the locked npm install and build commands in `vercel.json`; no database, storage binding, or environment variable is required. Production response headers include CSP, content-type sniffing protection, referrer/permissions policies, cross-origin policies, and HSTS on production builds.
 
 ## Development commands
 
 | Command                | Purpose                                         |
 | ---------------------- | ----------------------------------------------- |
-| `npm run dev`          | Start vinext/Vite development mode              |
-| `npm run build`        | Build the production worker and assets          |
+| `npm run dev`          | Start Next.js development mode                  |
+| `npm run build`        | Build the production Next.js application        |
 | `npm run start`        | Serve the production build locally              |
 | `npm run format`       | Format supported repository files with Prettier |
 | `npm run format:check` | Check formatting without modifying files        |
@@ -71,10 +71,11 @@ For a first local E2E run, install the selected browser once:
 
 ```bash
 npx playwright install chromium
+npm run build
 npm run test:e2e
 ```
 
-The CI type-check step invokes `npx tsc --noEmit` directly and installs dependencies with `npm ci`.
+Playwright starts the production server, so build the application before running E2E tests. The CI type-check step invokes `npx tsc --noEmit` directly and installs dependencies with `npm ci`.
 
 ## Supported algorithms
 
@@ -123,13 +124,13 @@ Routes and components use React state; algorithms and scenarios below `lib/` do 
 
 The application uses:
 
-- Next.js 16 App Router APIs through vinext/Vite
+- Next.js 16 App Router with native Next.js builds
 - React 19 and strict TypeScript
 - Tailwind/PostCSS plus a custom tokenized responsive design system
 - Zod for runtime validation
 - native SVG/CSS for graph and Story presentation
 - Vitest and Playwright for automated verification
-- the Cloudflare Vite plugin for the deployable worker
+- Vercel for hosting with the Next.js framework preset
 
 The first release deliberately avoids a global state dependency, animation framework, database, and client code editor because the bounded product does not require them. See [architecture](docs/architecture.md), [animation system](docs/animation-system.md), and [data model](docs/data-model.md).
 
@@ -146,7 +147,7 @@ docs/                   architecture, behavior, security, and operations
 tests/                   unit/integration/rendered-route tests
 e2e/                     Playwright product-flow tests
 .github/workflows/       locked-install CI and language smoke checks
-worker/                  vinext/Cloudflare worker entry
+vercel.json              native Next.js deployment configuration
 ```
 
 ## Trusted language implementations
@@ -183,7 +184,7 @@ Open `/compare`, keep scenario/seed/endpoints/cost/closures identical, warm the 
 - Imports are strict schema-versioned JSON with a 512 KiB ceiling, finite numbers, plain-text labels, unique safe IDs, valid references, bounded metadata, and graph-specific limits.
 - RouteLab never uses `eval`, `new Function`, visitor-selected dynamic imports, executable plugins, a compiler service, or user-directed server fetches.
 - The code viewer displays repository-controlled text only.
-- CSP forbids `unsafe-eval`, objects, framing, and off-origin HTTP data connections. WebSocket schemes remain available for framework tooling. Next/vinext currently requires a documented inline bootstrap exception; imported values are never interpolated into it.
+- CSP forbids `unsafe-eval`, objects, framing, and off-origin HTTP data connections. WebSocket schemes remain available for framework tooling. Next.js currently requires a documented inline bootstrap exception; imported values are never interpolated into it.
 - No account, analytics, server-side graph storage, or secret is required. Imported graphs remain on the device unless the visitor explicitly shares/downloads them.
 - Share strings are encoded, not encrypted; do not put confidential graph labels in a URL.
 

@@ -4,10 +4,10 @@ This document records the decisions used to turn the broad RouteLab product brie
 
 ## Repository and platform
 
-- The existing `vinext` starter is retained. It exposes the Next.js App Router programming model while Vite and the Cloudflare plugin produce the deployable worker.
+- Native Next.js builds support Vercel hosting. The original Sites/Cloudflare adapter has been removed; Vite remains only as the underlying tool for Vitest tests.
 - npm is the package manager because the repository arrived with `package-lock.json`. CI uses `npm ci`; adding a second lockfile would reduce reproducibility.
 - Node.js 22.13 or newer is the supported development runtime, matching `package.json`.
-- The application is client-first and does not need D1, R2, authentication, server persistence, or private environment variables in v1.
+- The application is client-first and does not need a database, object storage, authentication, server persistence, or private environment variables in v1.
 - Routes remain inside the existing top-level `app/` structure instead of introducing a monorepo. Domain code is separated below `lib/`, reusable presentation is below `components/`, and trusted teaching sources are below `implementations/`.
 
 ## Product scope
